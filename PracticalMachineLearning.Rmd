@@ -1,0 +1,53 @@
+---
+title: "Practical Machine Learning Assignment"
+date: "Monday, March 23, 2015"
+output: html_document
+---
+
+## Executive Summary
+This document examined the building of a model to predict the class of 20 test cases using a set of a total of 159 variables in the Human Activity Recognition dataset. This dataset is derived from having a group of enthusiasts who take measurements of their activities in the hope of improving their health. By using the measurements of sensors attached theoughout their bodies, a prediction algorithm was developed. Linear Discriminant Analysis  was performed to build the model for this prediction exercise. The final model using this method yielded around 0.70 accuracy.
+
+## Download and load dataset and relevant libraries, etc.
+```{r message=FALSE, results='hide', warning=FALSE}
+download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", destfile="training.csv")
+download.file("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", destfile="testCases.csv")
+data <- read.csv("training.csv")
+testCases <- read.csv("testCases.csv")
+library(caret); library(MASS);
+```
+
+## Extract from dataset only columns with "useful" information
+Upon running a summary function on the dataset and examining the first 20 records of the dataset, columns with majority NAs or blanks are excluded. The first to seventh columns were also excluded since they included information that were not very informative of the class of activities to be predicted. The first column features a running sequence of numbers for each record, while the second column details the user names of record, etc. After this exclusion, only 53 variables are left.
+```{r}
+data <- data[,c(8,9,10,11,37,38,39,40,41,42,43,44,45,46,47,48,49,60,61,62,63,64,65,66,67,68,84,85,86,102,113,114,115,116,117,118,119,120,121,122,123,124,140,151,152,153,154,155,156,157,158,159,160)]
+testCases <- testCases[,c(8,9,10,11,37,38,39,40,41,42,43,44,45,46,47,48,49,60,61,62,63,64,65,66,67,68,84,85,86,102,113,114,115,116,117,118,119,120,121,122,123,124,140,151,152,153,154,155,156,157,158,159,160)]
+```
+The 160th column contains the Dependent Variable. Below are the classes of actions that the exercise was trying to predict.
+
+Classes:
+A --> Exactly according to the specification
+B --> Throwing the elbows to the front
+C --> Lifting the dumbbell only halfway
+D --> Lowering the dumbbell only halfway
+E --> Throwing the hips to the front
+
+##Create training and testing datasets from the original dataset. Also set seed.
+```{r}
+inTrain <- createDataPartition(y=data$classe, p=0.7, list=FALSE)
+training <- data[inTrain,]
+testing <- data[-inTrain,]
+inTrain <- NULL
+
+set.seed(32343)
+```
+
+## Run Caret's train and develop model. 
+Several other methods were trialed. These included Linear Models, Generalized Linear Models, Naive Bayes, Random forests, Recursive Partitioning and Regression Trees, and Linear Discriminant Analysis. Eventually, LDA was chosen as it provided the best accuracy.
+```{r}
+model <- train(classe~., data=training, method="lda")
+pred <- predict(model, testing)
+
+length(pred[pred == testing$classe])/5885
+```
+
+Predicting the classes of the testing dataset using all 53 predictors showed a prediction accuracy of around 0.70. Running the LDA with Principal Component Analysis did not yield a better accuracy. Thus, the decision was to stick with the LDA model with all predictors.
